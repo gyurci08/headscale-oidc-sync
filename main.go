@@ -1,19 +1,12 @@
 package main
 
 import (
-	"os"
+	"context"
 
 	"hu.jandzsogyorgy.headscale-oidc-sync/pkg/config"
 	"hu.jandzsogyorgy.headscale-oidc-sync/pkg/logger"
+	"hu.jandzsogyorgy.headscale-oidc-sync/pkg/oidc"
 )
-
-func setupLogger(cfg *config.Config) (logger.ILogger, error) {
-	loggerParams := logger.NewParams{
-		Config: *cfg,
-		Writer: os.Stdout,
-	}
-	return logger.NewLogger(loggerParams)
-}
 
 func main() {
 	cfg, err := config.LoadConfig()
@@ -21,9 +14,24 @@ func main() {
 		panic(err)
 	}
 
-	log, err := setupLogger(cfg)
+	log, err := logger.NewLogger(*cfg, nil)
 	if err != nil {
 		panic(err)
+	}
+
+	oidc, err := oidc.NewOidcClient(*cfg, log)
+	if err != nil {
+		log.Error("Could not create oidc client!")
+		panic(err)
+	}
+
+	groups, err := oidc.ListGroups(context.Background())
+	if err != nil {
+		log.Error("Could not list groups!")
+		panic(err)
+	}
+	for _, group := range groups {
+		log.Info(group)
 	}
 
 	log.Info("Application started...")

@@ -16,18 +16,12 @@ type Logger struct {
 
 var _ ILogger = (*Logger)(nil)
 
-type NewParams struct {
-	Config config.Config
-	Writer io.Writer
-}
-
-func NewLogger(params NewParams) (ILogger, error) {
-	writer := params.Writer
+func NewLogger(cfg config.Config, writer io.Writer) (ILogger, error) {
 	if writer == nil {
 		writer = os.Stdout
 	}
 
-	logCfg := params.Config.Log
+	logCfg := cfg.Log
 
 	var level slog.Level
 	if err := level.UnmarshalText([]byte(logCfg.Level)); err != nil {
