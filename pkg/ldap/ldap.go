@@ -2,6 +2,7 @@ package ldap
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/go-ldap/ldap/v3"
 	"hu.jandzsogyorgy.headscale-oidc-sync/pkg/config"
@@ -56,6 +57,7 @@ func (c *Client) Close() {
 }
 
 func (c *Client) QueryUsers() ([]string, error) {
+	filter := wrapFilter(c.config.UserFilter)
 	searchRequest := ldap.NewSearchRequest(
 		c.config.BaseDN,
 		ldap.ScopeWholeSubtree,
@@ -63,7 +65,7 @@ func (c *Client) QueryUsers() ([]string, error) {
 		0,
 		0,
 		false,
-		c.config.UserFilter,
+		filter,
 		[]string{"mail"},
 		nil,
 	)
@@ -80,11 +82,12 @@ func (c *Client) QueryUsers() ([]string, error) {
 		emails = append(emails, email)
 	}
 
-	c.log.Info("Queried users", "count", len(emails))
+	c.log.Debug("Queried users", "count", len(emails))
 	return emails, nil
 }
 
 func (c *Client) QueryGroups() ([]string, error) {
+	filter := wrapFilter(c.config.GroupFilter)
 	searchRequest := ldap.NewSearchRequest(
 		c.config.BaseDN,
 		ldap.ScopeWholeSubtree,
@@ -92,7 +95,7 @@ func (c *Client) QueryGroups() ([]string, error) {
 		0,
 		0,
 		false,
-		c.config.GroupFilter,
+		filter,
 		[]string{"cn"},
 		nil,
 	)
@@ -111,4 +114,14 @@ func (c *Client) QueryGroups() ([]string, error) {
 
 	c.log.Info("Queried groups", "count", len(groups))
 	return groups, nil
+}
+
+func wrapFilter(filter string) string {
+	if filter == "" {
+		return ""
+	}
+	if strings.HasPrefix(filter, "(&") {
+		return filter
+	}
+	return fmt.Sprintf("(&%s)", filter)
 }

@@ -37,9 +37,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	for _, email := range users {
-		log.Info(email)
-	}
+	log.Info("LDAP users:", "users", users)
 
 	groups, err := ldapClient.QueryGroups()
 	if err != nil {
