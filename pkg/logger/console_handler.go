@@ -7,7 +7,6 @@ import (
 	"io"
 	"log/slog"
 	"runtime"
-	"strings"
 	"sync"
 )
 
@@ -39,29 +38,30 @@ func (h *ConsoleHandler) Enabled(_ context.Context, level slog.Level) bool {
 func (h *ConsoleHandler) Handle(_ context.Context, r slog.Record) error {
 	var buf bytes.Buffer
 
-	// 1. Time
+	// 1. Time (fixed width)
 	if !r.Time.IsZero() {
 		buf.WriteString(r.Time.Format("2006-01-02T15:04:05.999Z"))
 	}
-	buf.WriteByte('\t')
+	buf.WriteString("\t")
 
-	// 2. Level
-	buf.WriteString(r.Level.String())
-	buf.WriteByte('\t')
+	// 2. Level (fixed width)
+	buf.WriteString(fmt.Sprintf("%-7s", r.Level.String()))
+	buf.WriteString("\t")
 
-	// 3. Source
+	// 3. Source (fixed width)
 	if h.opts.AddSource && r.PC != 0 {
 		fs := runtime.CallersFrames([]uintptr{r.PC})
 		f, _ := fs.Next()
-		buf.WriteString(fmt.Sprintf("%s:%d", f.File, f.Line))
+		buf.WriteString(fmt.Sprintf("%-50s", fmt.Sprintf("%s:%d", f.File, f.Line)))
+	} else {
+		buf.WriteString(fmt.Sprintf("%-50s", ""))
 	}
-	buf.WriteByte('\t')
+	buf.WriteString("\t")
 
 	// 4. Message
 	buf.WriteString(fmt.Sprintf("%q", r.Message))
 
 	// 5. Attributes
-	var attrsBuilder strings.Builder
 	allAttrs := h.attrs
 	r.Attrs(func(a slog.Attr) bool {
 		allAttrs = append(allAttrs, a)
@@ -69,15 +69,11 @@ func (h *ConsoleHandler) Handle(_ context.Context, r slog.Record) error {
 	})
 
 	for _, a := range allAttrs {
-		attrsBuilder.WriteByte('\t')
-		attrsBuilder.WriteString(a.Value.String())
+		buf.WriteString("\t")
+		buf.WriteString(a.Value.String())
 	}
 
-	if attrsBuilder.Len() > 0 {
-		buf.WriteString(attrsBuilder.String())
-	}
-
-	buf.WriteByte('\n')
+	buf.WriteString("\n")
 
 	h.mu.Lock()
 	defer h.mu.Unlock()

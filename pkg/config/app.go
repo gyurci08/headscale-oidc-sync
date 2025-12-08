@@ -8,6 +8,6 @@ type AppConfig struct {
 func NewAppConfig() AppConfig {
 	return AppConfig{
 		Port: getEnvInt("APP_PORT", 8080),
-		Env:  getEnv("APP_ENV", "development"),
+		Env:  getEnvValue("APP_ENV", "development"),
 	}
 }

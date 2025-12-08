@@ -11,14 +11,14 @@ import (
 type Config struct {
 	App  AppConfig
 	Log  LogConfig
-	Oidc OidcConfig
+	Ldap LdapConfig
 }
 
 func buildConfig() Config {
 	return Config{
 		App:  NewAppConfig(),
 		Log:  NewLogConfig(),
-		Oidc: NewOidcConfig(),
+		Ldap: NewLdapConfig(),
 	}
 }
 
@@ -38,15 +38,15 @@ func LoadConfig() (*Config, error) {
 	return &cfg, nil
 }
 
-func getEnv(key, fallback string) string {
-	if value, exists := os.LookupEnv(key); exists {
+func getEnvValue(key, fallback string) string {
+	if value, exists := os.LookupEnv(key); exists && value != "" {
 		return value
 	}
 	return fallback
 }
 
 func getEnvInt(key string, fallback int) int {
-	if value, exists := os.LookupEnv(key); exists {
+	if value := getEnvValue(key, ""); value != "" {
 		if i, err := strconv.Atoi(value); err == nil {
 			return i
 		}
@@ -55,7 +55,7 @@ func getEnvInt(key string, fallback int) int {
 }
 
 func getEnvBool(key string, fallback bool) bool {
-	if value, exists := os.LookupEnv(key); exists {
+	if value := getEnvValue(key, ""); value != "" {
 		if b, err := strconv.ParseBool(value); err == nil {
 			return b
 		}
