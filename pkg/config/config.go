@@ -14,24 +14,28 @@ type Config struct {
 	Oidc OidcConfig
 }
 
+func buildConfig() Config {
+	return Config{
+		App:  NewAppConfig(),
+		Log:  NewLogConfig(),
+		Oidc: NewOidcConfig(),
+	}
+}
+
 func LoadConfig() (*Config, error) {
 	// Load .env file if it exists
 	if err := godotenv.Load(); err != nil {
 		// If .env file not found, continue with OS environment
 	}
 
-	cfg := &Config{
-		App:  NewAppConfig(),
-		Log:  NewLogConfig(),
-		Oidc: NewOidcConfig(),
-	}
+	cfg := buildConfig()
 
 	validate := validator.New()
 	if err := validate.Struct(cfg); err != nil {
 		return nil, err
 	}
 
-	return cfg, nil
+	return &cfg, nil
 }
 
 func getEnv(key, fallback string) string {
