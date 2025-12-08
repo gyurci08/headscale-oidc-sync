@@ -5,47 +5,25 @@ import (
 	"strconv"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	App  AppConfig  `validate:"required"`
-	Log  LogConfig  `validate:"required"`
-	Oidc OidcConfig `validate:"required"`
-}
-
-type AppConfig struct {
-	Port int    `validate:"omitempty,gt=0"`
-	Env  string `validate:"omitempty,oneof=development test production"`
-}
-
-type LogConfig struct {
-	Level  string `validate:"omitempty,oneof=debug info warn"`
-	Format string `validate:"omitempty,oneof=json text console"`
-}
-
-type OidcConfig struct {
-	Issuer       string `validate:"required,url"`
-	ClientId     string `validate:"required"`
-	ClientSecret string `validate:"required"`
-	Scope        string `validate:"required"`
+	App  AppConfig
+	Log  LogConfig
+	Oidc OidcConfig
 }
 
 func LoadConfig() (*Config, error) {
+	// Load .env file if it exists
+	if err := godotenv.Load(); err != nil {
+		// If .env file not found, continue with OS environment
+	}
+
 	cfg := &Config{
-		App: AppConfig{
-			Port: getEnvInt("APP_PORT", 8080),
-			Env:  getEnv("APP_ENV", "development"),
-		},
-		Log: LogConfig{
-			Level:  getEnv("LOG_LEVEL", "debug"),
-			Format: getEnv("LOG_FORMAT", "console"),
-		},
-		Oidc: OidcConfig{
-			Issuer:       getEnv("OIDC_ISSUER", "https://oidc.example.com/application/o/app/"),
-			ClientId:     getEnv("OIDC_CLIENT_ID", "id"),
-			ClientSecret: getEnv("OIDC_CLIENT_SECRET", "secret"),
-			Scope:        getEnv("OIDC_SCOPE", "openid email profile"),
-		},
+		App:  NewAppConfig(),
+		Log:  NewLogConfig(),
+		Oidc: NewOidcConfig(),
 	}
 
 	validate := validator.New()
