@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"hu.jandzsogyorgy.headscale-oidc-sync/pkg/config"
 	"hu.jandzsogyorgy.headscale-oidc-sync/pkg/ldap"
@@ -31,11 +32,37 @@ func main() {
 	}
 	defer ldapClient.Close()
 
-	users, err := ldapClient.QueryUsersWithRoles()
+	users, err := ldapClient.QueryUsersWithGroups()
 	if err != nil {
 		log.Error("Failed to query LDAP users with roles", "error", err)
 		os.Exit(1)
 	}
 
-	log.Info("LDAP users with roles:", "users", users)
+	var filteredUsers []ldap.User
+	for _, user := range users {
+		var filteredUserGroups []ldap.Group
+		isInGroup := false
+		for _, group := range user.Groups {
+			if strings.HasPrefix(group.Name, cfg.App.GroupPrefix) {
+				isInGroup = true
+				filteredUserGroups = append(filteredUserGroups, group)
+			}
+		}
+		user.Groups = filteredUserGroups
+		if isInGroup {
+			filteredUsers = append(filteredUsers, user)
+		}
+	}
+
+	for _, user := range filteredUsers {
+		var identifier = user.Email
+		if !strings.Contains(user.Email, "@") {
+			identifier = user.Username + "@"
+		}
+		var groups []string
+		for _, group := range user.Groups {
+			groups = append(groups, group.Name)
+		}
+		log.Info("user", "email", identifier, "groups", groups)
+	}
 }

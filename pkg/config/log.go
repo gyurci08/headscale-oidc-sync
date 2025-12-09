@@ -7,7 +7,7 @@ type LogConfig struct {
 
 func NewLogConfig() LogConfig {
 	return LogConfig{
-		Level:  getEnvValue("LOG_LEVEL", "debug"),
+		Level:  getEnvValue("LOG_LEVEL", "info"),
 		Format: getEnvValue("LOG_FORMAT", "console"),
 	}
 }
