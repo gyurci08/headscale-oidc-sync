@@ -2,18 +2,19 @@ package ldap
 
 // Group represents an LDAP group with full details.
 type Group struct {
-	Name        string            // cn
-	DN          string            // distinguishedName
-	Description string            // description
-	Members     []string          // member
-	Owner       string            // owner
-	Manager     string            // manager
-	MemberOf    []string          // memberOf (for nested groups)
-	WhenCreated string            // whenCreated
-	WhenChanged string            // whenChanged
-	DisplayName string            // displayName
-	Info        string            // info
-	Attributes  map[string]string // all other attributes from LDAP entry
+	UID         string
+	DN          string
+	Name        string
+	DisplayName string
+	Description string
+	Members     []string
+	Owner       string
+	Manager     string
+	MemberOf    []string
+	WhenCreated string
+	WhenChanged string
+	Info        string
+	Attributes  map[string]string
 }
 
 // GetAttribute returns the value of an arbitrary attribute if it exists.
