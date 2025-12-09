@@ -10,6 +10,12 @@ import (
 	"hu.jandzsogyorgy.headscale-oidc-sync/pkg/models"
 )
 
+type LDAPClient interface {
+	QueryUsers() ([]models.User, error)
+	QueryGroups() ([]string, error)
+	QueryUsersWithRoles() ([]models.User, error)
+	Close()
+}
 type Client struct {
 	conn   *ldap.Conn
 	config config.LdapConfig
@@ -79,9 +85,7 @@ func (c *Client) QueryUsersWithRoles() ([]models.User, error) {
 			Username: firstNonEmpty(entry.GetAttributeValue("uid"), entry.GetAttributeValue("cn")),
 			Roles:    extractGroupNames(entry.GetAttributeValues("memberOf")),
 		}
-		if user.Email != "" {
-			users = append(users, user)
-		}
+		users = append(users, user)
 	}
 	c.log.Debug("Queried users with roles", "count", len(users))
 	return users, nil
