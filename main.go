@@ -31,19 +31,11 @@ func main() {
 	}
 	defer ldapClient.Close()
 
-	users, err := ldapClient.QueryUsers()
+	users, err := ldapClient.QueryUsersWithRoles()
 	if err != nil {
-		log.Error("Failed to query LDAP users", "error", err)
+		log.Error("Failed to query LDAP users with roles", "error", err)
 		os.Exit(1)
 	}
 
-	log.Info("LDAP users:", "users", users)
-
-	groups, err := ldapClient.QueryGroups()
-	if err != nil {
-		log.Error("Failed to query LDAP groups", "error", err)
-		os.Exit(1)
-	}
-
-	log.Info("LDAP groups:", "groups", groups)
+	log.Info("LDAP users with roles:", "users", users)
 }
