@@ -64,5 +64,5 @@ Copy `.env.example` to `.env` and adjust the values to match your environment.
 
 ## Contributing
 
-Pull requests are welcome. I am a just learning go so please provide proper description.
-Thank you!
+Pull requests are welcome! As I am still at the beginning of learning Go, please include detailed descriptions with your contributions.
+Thank you for your help!
