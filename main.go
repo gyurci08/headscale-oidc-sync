@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -9,6 +10,12 @@ import (
 	"hu.jandzsogyorgy.headscale-oidc-sync/pkg/ldap"
 	"hu.jandzsogyorgy.headscale-oidc-sync/pkg/logger"
 )
+
+// Define a struct that matches the ACL file structure
+type ACL struct {
+	Groups map[string][]string `json:"groups"`
+	ACLs   json.RawMessage     `json:"acls"`
+}
 
 func main() {
 	cfg, err := config.LoadConfig()
@@ -38,31 +45,80 @@ func main() {
 		os.Exit(1)
 	}
 
-	var filteredUsers []ldap.User
+	log.Info("LDAP query complete", "total_users", len(users))
+
+	// Load existing ACL file
+	aclFilePath := cfg.App.AclJson
+	aclData, err := os.ReadFile(aclFilePath)
+	if err != nil {
+		log.Error("Failed to read ACL file", "path", aclFilePath, "error", err)
+		os.Exit(1)
+	}
+
+	// Parse the ACL file
+	var existingACL ACL
+	if err := json.Unmarshal(aclData, &existingACL); err != nil {
+		log.Error("Failed to parse existing ACL file", "path", aclFilePath, "error", err)
+		os.Exit(1)
+	}
+
+	// Generate new groups from LDAP
+	newGroups := generateGroupsFromLDAP(users, cfg.App.GroupPrefix)
+
+	// Create updated structure preserving original acls as raw JSON
+	updatedACL := ACL{
+		Groups: newGroups,
+		ACLs:   existingACL.ACLs,
+	}
+
+	// Marshal updated file
+	updatedJSON, err := json.MarshalIndent(updatedACL, "", "  ")
+	if err != nil {
+		log.Error("Failed to marshal updated ACL file", "error", err)
+		os.Exit(1)
+	}
+
+	// Write back to file
+	if err := os.WriteFile(aclFilePath, updatedJSON, 0644); err != nil {
+		log.Error("Failed to write ACL file", "path", aclFilePath, "error", err)
+		os.Exit(1)
+	}
+
+	log.Info("ACL file updated successfully",
+		"path", aclFilePath,
+		"total_groups", len(newGroups),
+		"total_users_in_groups", countUniqueUsersInGroups(newGroups))
+}
+
+// generateGroupsFromLDAP creates the groups map from LDAP data
+func generateGroupsFromLDAP(users []ldap.User, groupPrefix string) map[string][]string {
+	groupMap := make(map[string][]string)
+
 	for _, user := range users {
-		var filteredUserGroups []ldap.Group
-		isInGroup := false
 		for _, group := range user.Groups {
-			if strings.HasPrefix(group.Name, cfg.App.GroupPrefix) {
-				isInGroup = true
-				filteredUserGroups = append(filteredUserGroups, group)
+			if strings.HasPrefix(group.Name, groupPrefix) {
+				identifier := user.Email
+				if !strings.Contains(user.Email, "@") {
+					identifier = user.Username + "@"
+				}
+				key := "group:" + group.Name
+				groupMap[key] = append(groupMap[key], identifier)
 			}
-		}
-		user.Groups = filteredUserGroups
-		if isInGroup {
-			filteredUsers = append(filteredUsers, user)
 		}
 	}
 
-	for _, user := range filteredUsers {
-		var identifier = user.Email
-		if !strings.Contains(user.Email, "@") {
-			identifier = user.Username + "@"
+	return groupMap
+}
+
+// countUniqueUsersInGroups returns the total number of unique users across all groups
+func countUniqueUsersInGroups(groups map[string][]string) int {
+	userSet := make(map[string]bool)
+
+	for _, userEmails := range groups {
+		for _, email := range userEmails {
+			userSet[email] = true
 		}
-		var groups []string
-		for _, group := range user.Groups {
-			groups = append(groups, group.Name)
-		}
-		log.Info("user", "email", identifier, "groups", groups)
 	}
+
+	return len(userSet)
 }

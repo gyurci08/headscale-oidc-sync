@@ -4,6 +4,7 @@ type AppConfig struct {
 	Port        int    `validate:"omitempty,gt=0"`
 	Env         string `validate:"omitempty,oneof=development test production"`
 	GroupPrefix string `validate:"required"`
+	AclJson     string `validate:"required"`
 }
 
 func NewAppConfig() AppConfig {
@@ -11,5 +12,6 @@ func NewAppConfig() AppConfig {
 		Port:        getEnvInt("APP_PORT", 8080),
 		Env:         getEnvValue("APP_ENV", "production"),
 		GroupPrefix: getEnvValue("APP_GROUP_PREFIX", ""),
+		AclJson:     getEnvValue("APP_ACL_JSON", ""),
 	}
 }
