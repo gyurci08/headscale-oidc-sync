@@ -1,0 +1,7 @@
+services:
+  headscale-oidc-sync:
+    image: harbor.jandzsogyorgy.hu/jgy/headscale-oidc-sync
+    env_file: .env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./acl.json:/workspace/acl.json

@@ -4,8 +4,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
+	customValidator "hu.jandzsogyorgy.headscale-oidc-sync/pkg/validator"
 )
 
 type Config struct {
@@ -30,8 +30,8 @@ func LoadConfig() (*Config, error) {
 
 	cfg := buildConfig()
 
-	validate := validator.New()
-	if err := validate.Struct(cfg); err != nil {
+	// Use custom validator
+	if err := customValidator.Validate.Struct(cfg); err != nil {
 		return nil, err
 	}
 
