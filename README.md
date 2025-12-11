@@ -2,6 +2,8 @@
 
 A Go application that synchronizes OIDC (via LDAP Provider) groups into the Headscale ACL file, enabling OIDC-authenticated users to be managed via group membership.
 
+*TODO: Use API too*
+
 ## Purpose
 
 This tool periodically queries your LDAP server for users and their group memberships, then updates the acl file used by Headscale. It ensures that Headscale ACL groups are kept in sync with LDAP, so access control policies can be managed directly in your directory service.
